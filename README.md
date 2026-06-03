@@ -59,13 +59,75 @@ The default registry repository is public, so no private token is required for s
 
 ## Independent Review Runner
 
-Some agent hosts run with a sandboxed `HOME`, which can make authenticated reviewer CLIs look unauthenticated even when they work in a normal terminal. Use the review runner instead of calling reviewer CLIs directly:
+Some agent hosts run with a sandboxed `HOME`, which can make authenticated reviewer CLIs look unauthenticated even when they work in a normal terminal. Use enforcement tooling instead of calling reviewer CLIs directly.
+
+Discover local agents:
+
+```sh
+scripts/discover-agents.sh --probe --format markdown
+```
+
+Select an independent reviewer dynamically:
+
+```sh
+scripts/select-reviewer.sh --current codex
+```
+
+Run a review with automatic reviewer selection:
 
 ```sh
 scripts/run-agent-review.sh \
-  --agent claude \
+  --agent auto \
+  --builder codex \
   --request ../swiftanvil-meta/Reviews/request.md \
   --output ../swiftanvil-meta/Reviews/review-claude.md
 ```
 
+The runner writes both the review output and a sidecar metadata file:
+
+```text
+review-claude.md
+review-claude.md.review.yml
+```
+
 The script resolves the login home directory by default. Override it with `SWIFTANVIL_AGENT_HOME` if a reviewer tool stores credentials elsewhere.
+
+Prefer a reviewer order without hardcoding it into a repository:
+
+```sh
+SWIFTANVIL_REVIEWER_PREFERENCE=claude,kimi,gemini \
+  scripts/run-agent-review.sh --agent auto --builder codex --request request.md --output review.md
+```
+
+## Review Artifact Enforcement
+
+Validate review artifacts locally:
+
+```sh
+scripts/validate-review-artifacts.sh --root ../swiftanvil-meta
+```
+
+The validator requires:
+
+- every review request to have at least one successful review metadata file
+- successful reviews to contain a valid verdict
+- reviewer and builder to differ when the builder is recorded
+- output files referenced by metadata to exist
+
+## Local Enforcement Without GitHub Minutes
+
+Run the same local checks directly:
+
+```sh
+scripts/enforce-local.sh \
+  --registry-root ../swiftanvil-meta \
+  --root ../swiftanvil-meta
+```
+
+Run the local GitHub Actions workflow when `act` is installed:
+
+```sh
+scripts/run-local-actions.sh --root ../swiftanvil-meta
+```
+
+If `act` is not installed, the script falls back to `enforce-local.sh`.

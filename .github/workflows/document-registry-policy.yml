@@ -45,3 +45,8 @@ jobs:
           enforcement/scripts/validate-document-registry.sh \
             --registry-root meta \
             --root repo
+
+      - name: Validate review artifacts
+        run: |
+          enforcement/scripts/validate-review-artifacts.sh \
+            --root repo

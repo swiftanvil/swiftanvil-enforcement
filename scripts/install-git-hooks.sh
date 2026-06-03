@@ -24,7 +24,7 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel)
 workspace_root=$(CDPATH= cd -- "$repo_root/.." && pwd)
 
-exec "$workspace_root/swiftanvil-enforcement/scripts/validate-document-registry.sh" \
+exec "$workspace_root/swiftanvil-enforcement/scripts/enforce-local.sh" \
   --registry-root "$workspace_root/swiftanvil-meta" \
   --root "$repo_root"
 EOF
