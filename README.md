@@ -52,7 +52,7 @@ on:
 
 jobs:
   document-registry-policy:
-    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/document-registry-policy.yml@main
+    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/document-registry-policy.yml@v1
 ```
 
 The default registry repository is public, so no private token is required for standard SwiftAnvil repositories.
