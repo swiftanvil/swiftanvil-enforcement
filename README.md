@@ -29,6 +29,15 @@ Install the pre-commit hook across local SwiftAnvil repos:
 scripts/install-git-hooks.sh
 ```
 
+Repositories may add `.swiftanvil-registry-ignore` for immutable archives or generated docs that should not be rewritten, for example:
+
+```text
+Children/*
+Composed/*
+Documentation/Fragments/*
+Phase-Summaries/*
+```
+
 ## GitHub Actions
 
 Product repositories can call the reusable workflow:

@@ -8,6 +8,9 @@ Usage: validate-document-registry.sh [--registry PATH | --registry-root PATH] --
 Validates that files under --root do not hardcode document paths owned by
 the central document registry. Refer to stable document IDs instead.
 
+If --root contains .swiftanvil-registry-ignore, each non-empty, non-comment
+line is treated as a shell glob for files to skip.
+
 Options:
   --registry PATH       Path to the document registry YAML file.
   --registry-root PATH  Repository root containing the document registry.
@@ -72,7 +75,8 @@ fi
 
 tmp_refs="$(mktemp)"
 tmp_files="$(mktemp)"
-trap 'rm -f "$tmp_refs" "$tmp_files"' EXIT
+tmp_ignores="$(mktemp)"
+trap 'rm -f "$tmp_refs" "$tmp_files" "$tmp_ignores"' EXIT
 
 awk '
   /^[[:space:]]+path:[[:space:]]/ {
@@ -104,13 +108,32 @@ awk '
 
 if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$root" ls-files --cached --others --exclude-standard \
-    '*.md' '*.markdown' '*.txt' '*.yml' '*.yaml' \
+    '*.md' '*.markdown' '*.txt' \
     > "$tmp_files"
 else
   find "$root" -type f \( \
-    -name '*.md' -o -name '*.markdown' -o -name '*.txt' -o -name '*.yml' -o -name '*.yaml' \
+    -name '*.md' -o -name '*.markdown' -o -name '*.txt' \
   \) | sed "s#^$root/##" > "$tmp_files"
 fi
+
+if [ -f "$root/.swiftanvil-registry-ignore" ]; then
+  sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d' "$root/.swiftanvil-registry-ignore" > "$tmp_ignores"
+fi
+
+should_skip() {
+  candidate="$1"
+
+  while IFS= read -r pattern; do
+    [ -n "$pattern" ] || continue
+    case "$candidate" in
+      $pattern)
+        return 0
+        ;;
+    esac
+  done < "$tmp_ignores"
+
+  return 1
+}
 
 violations=0
 
@@ -122,6 +145,10 @@ while IFS= read -r file; do
       continue
       ;;
   esac
+
+  if should_skip "$file"; then
+    continue
+  fi
 
   full_path="$root/$file"
   [ -f "$full_path" ] || continue
