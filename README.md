@@ -56,3 +56,16 @@ jobs:
 ```
 
 The default registry repository is public, so no private token is required for standard SwiftAnvil repositories.
+
+## Independent Review Runner
+
+Some agent hosts run with a sandboxed `HOME`, which can make authenticated reviewer CLIs look unauthenticated even when they work in a normal terminal. Use the review runner instead of calling reviewer CLIs directly:
+
+```sh
+scripts/run-agent-review.sh \
+  --agent claude \
+  --request ../swiftanvil-meta/Reviews/request.md \
+  --output ../swiftanvil-meta/Reviews/review-claude.md
+```
+
+The script resolves the login home directory by default. Override it with `SWIFTANVIL_AGENT_HOME` if a reviewer tool stores credentials elsewhere.
