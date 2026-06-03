@@ -1,0 +1,47 @@
+name: Document Registry Policy
+
+on:
+  workflow_call:
+    inputs:
+      registry_repository:
+        description: Repository containing the document registry.
+        required: false
+        type: string
+        default: swiftanvil/swiftanvil-meta
+      registry_ref:
+        description: Git ref for the registry repository.
+        required: false
+        type: string
+        default: main
+    secrets:
+      SWIFTANVIL_META_TOKEN:
+        required: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+        with:
+          path: repo
+
+      - name: Checkout enforcement tooling
+        uses: actions/checkout@v4
+        with:
+          repository: swiftanvil/swiftanvil-enforcement
+          path: enforcement
+
+      - name: Checkout document registry
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.registry_repository }}
+          ref: ${{ inputs.registry_ref }}
+          token: ${{ secrets.SWIFTANVIL_META_TOKEN || github.token }}
+          path: meta
+
+      - name: Validate document registry references
+        run: |
+          enforcement/scripts/validate-document-registry.sh \
+            --registry-root meta \
+            --root repo
