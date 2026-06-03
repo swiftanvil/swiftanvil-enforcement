@@ -53,7 +53,6 @@ on:
 jobs:
   document-registry-policy:
     uses: swiftanvil/swiftanvil-enforcement/.github/workflows/document-registry-policy.yml@main
-    secrets: inherit
 ```
 
-If `swiftanvil-meta` remains private, configure an organization secret named `SWIFTANVIL_META_TOKEN` with read access to that repository.
+The default registry repository is public, so no private token is required for standard SwiftAnvil repositories.
