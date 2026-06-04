@@ -25,7 +25,7 @@ EOF
   esac
 done
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 
 if command -v act >/dev/null 2>&1; then
   (cd "$root" && act -W .github/workflows/document-registry-policy-check.yml)

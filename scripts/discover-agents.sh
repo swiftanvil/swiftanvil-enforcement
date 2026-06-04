@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck disable=SC1091
 . "$script_dir/lib/agent-common.sh"
 
@@ -35,7 +35,7 @@ EOF
 done
 
 home=$(login_home)
-adapter_root=$(CDPATH= cd -- "$script_dir/../adapters" && pwd)
+adapter_root=$(CDPATH='' cd -- "$script_dir/../adapters" && pwd)
 
 if [ "$format" = "markdown" ]; then
   printf '| Agent | Installed | Auth | Command | Notes |\n'
@@ -69,7 +69,7 @@ for adapter in "$adapter_root"/*.sh; do
   fi
 
   if [ "$format" = "markdown" ]; then
-    printf '| `%s` | %s | %s | `%s` | %s |\n' "$id" "$installed" "$auth" "$cmd" "$notes"
+    printf "| \`%s\` | %s | %s | \`%s\` | %s |\n" "$id" "$installed" "$auth" "$cmd" "$notes"
   else
     printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$installed" "$auth" "$cmd" "$notes"
   fi

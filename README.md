@@ -29,6 +29,12 @@ Install the pre-commit hook across local SwiftAnvil repos:
 scripts/install-git-hooks.sh
 ```
 
+Run the enforcement self-tests before changing policy scripts:
+
+```sh
+scripts/test-enforcement.sh
+```
+
 Repositories may add `.swiftanvil-registry-ignore` for immutable archives or generated docs that should not be rewritten, for example:
 
 ```text
@@ -56,6 +62,7 @@ jobs:
 ```
 
 The default registry repository is public, so no private token is required for standard SwiftAnvil repositories.
+The workflow also checks out enforcement scripts at `enforcement_ref`, which defaults to `v1`, so pinned callers do not accidentally run unreleased `main` scripts.
 
 ## Independent Review Runner
 
@@ -91,6 +98,7 @@ review-claude.md.review.yml
 ```
 
 The script resolves the login home directory by default. Override it with `SWIFTANVIL_AGENT_HOME` if a reviewer tool stores credentials elsewhere.
+`--builder` is required so enforcement can prove the review was performed by a different agent than the implementer.
 
 Prefer a reviewer order without hardcoding it into a repository:
 
@@ -111,7 +119,8 @@ The validator requires:
 
 - every review request to have at least one successful review metadata file
 - successful reviews to contain a valid verdict
-- reviewer and builder to differ when the builder is recorded
+- successful reviews to record both the reviewer and builder agents
+- reviewer and builder to differ
 - output files referenced by metadata to exist
 
 ## Local Enforcement Without GitHub Minutes

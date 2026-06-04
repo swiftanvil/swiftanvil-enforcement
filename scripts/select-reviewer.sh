@@ -31,7 +31,7 @@ EOF
   esac
 done
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 

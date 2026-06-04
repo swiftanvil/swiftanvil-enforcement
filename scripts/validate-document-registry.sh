@@ -125,6 +125,7 @@ should_skip() {
 
   while IFS= read -r pattern; do
     [ -n "$pattern" ] || continue
+    # shellcheck disable=SC2254
     case "$candidate" in
       $pattern)
         return 0

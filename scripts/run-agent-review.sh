@@ -3,7 +3,7 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: run-agent-review.sh --agent AGENT --request PATH --output PATH [--prompt TEXT] [--builder AGENT]
+Usage: run-agent-review.sh --agent AGENT --builder AGENT --request PATH --output PATH [--prompt TEXT]
 
 Runs an independent review request through a local agent CLI while avoiding
 sandbox-home authentication failures.
@@ -13,7 +13,7 @@ Options:
   --request PATH   Markdown/text file containing the review request.
   --output PATH    File where full reviewer output is written.
   --prompt TEXT    Optional instruction prepended to the request.
-  --builder AGENT  Current builder agent; used to prevent self-review.
+  --builder AGENT  Current builder agent; required to prevent self-review.
   --help           Show this help text.
 
 Environment:
@@ -21,7 +21,7 @@ Environment:
 EOF
 }
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck disable=SC1091
 . "$script_dir/lib/agent-common.sh"
 
@@ -65,7 +65,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ -z "$agent" ] || [ -z "$request" ] || [ -z "$output" ]; then
+if [ -z "$agent" ] || [ -z "$builder" ] || [ -z "$request" ] || [ -z "$output" ]; then
   usage >&2
   exit 2
 fi

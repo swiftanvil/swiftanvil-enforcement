@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-enforcement_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
-workspace_root=$(CDPATH= cd -- "$enforcement_root/.." && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+enforcement_root=$(CDPATH='' cd -- "$script_dir/.." && pwd)
+workspace_root=$(CDPATH='' cd -- "$enforcement_root/.." && pwd)
 meta_root="$workspace_root/swiftanvil-meta"
 
 if [ ! -f "$meta_root/REGISTRY.yml" ]; then
@@ -14,7 +14,7 @@ fi
 for git_dir in "$workspace_root"/*/.git "$workspace_root"/.github/.git; do
   [ -d "$git_dir" ] || continue
 
-  repo_root=$(CDPATH= cd -- "$git_dir/.." && pwd)
+  repo_root=$(CDPATH='' cd -- "$git_dir/.." && pwd)
   hook_path="$git_dir/hooks/pre-commit"
 
   cat > "$hook_path" <<'EOF'

@@ -31,14 +31,17 @@ if [ ! -d "$reviews_dir" ]; then
 fi
 
 failures=0
-requests=$(find "$reviews_dir" -maxdepth 1 -type f -name '*review-request.md' | sort)
+requests_file=$(mktemp)
+trap 'rm -f "$requests_file"' EXIT
+find "$reviews_dir" -maxdepth 1 -type f -name '*review-request.md' | sort > "$requests_file"
 
-if [ -z "$requests" ]; then
+if [ ! -s "$requests_file" ]; then
   echo "review artifact validation skipped: no review requests"
   exit 0
 fi
 
-for request in $requests; do
+while IFS= read -r request; do
+  [ -n "$request" ] || continue
   found_success=false
   request_rel=${request#"$root/"}
 
@@ -68,7 +71,15 @@ for request in $requests; do
             ;;
         esac
 
-        if [ -n "$builder" ] && [ "$builder" = "$agent" ]; then
+        if [ -z "$agent" ]; then
+          echo "$meta: successful review must record reviewer agent" >&2
+          failures=$((failures + 1))
+        fi
+
+        if [ -z "$builder" ]; then
+          echo "$meta: successful review must record builder agent" >&2
+          failures=$((failures + 1))
+        elif [ "$builder" = "$agent" ]; then
           echo "$meta: reviewer agent must differ from builder agent" >&2
           failures=$((failures + 1))
         fi
@@ -87,7 +98,7 @@ for request in $requests; do
     echo "$request: no successful independent review metadata found" >&2
     failures=$((failures + 1))
   fi
-done
+done < "$requests_file"
 
 if [ "$failures" -gt 0 ]; then
   echo "review artifact validation failed with $failures issue(s)" >&2

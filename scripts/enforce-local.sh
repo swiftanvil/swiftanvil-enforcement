@@ -30,12 +30,12 @@ EOF
   esac
 done
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 
 if [ -z "$registry_root" ]; then
   registry_root="$root"
   if [ ! -f "$registry_root/REGISTRY.yml" ]; then
-    registry_root="$(CDPATH= cd -- "$root/.." && pwd)/swiftanvil-meta"
+    registry_root="$(CDPATH='' cd -- "$root/.." && pwd)/swiftanvil-meta"
   fi
 fi
 

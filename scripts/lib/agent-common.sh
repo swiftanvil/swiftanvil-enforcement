@@ -59,11 +59,11 @@ extract_verdict() {
 }
 
 adapter_dir() {
-  script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-  printf '%s\n' "$(CDPATH= cd -- "$script_dir/../adapters" && pwd)"
+  script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+  printf '%s\n' "$(CDPATH='' cd -- "$script_dir/../adapters" && pwd)"
 }
 
 repo_root_from_script() {
-  script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-  printf '%s\n' "$(CDPATH= cd -- "$script_dir/.." && pwd)"
+  script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+  printf '%s\n' "$(CDPATH='' cd -- "$script_dir/.." && pwd)"
 }
