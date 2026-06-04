@@ -42,7 +42,7 @@ fi
 
 while IFS= read -r request; do
   [ -n "$request" ] || continue
-  found_success=false
+  found_acceptable=false
   request_rel=${request#"$root/"}
 
   for meta in "$reviews_dir"/*.review.yml; do
@@ -89,13 +89,17 @@ while IFS= read -r request; do
           failures=$((failures + 1))
         fi
 
-        found_success=true
+        case "$verdict" in
+          APPROVED|APPROVED_WITH_NOTES)
+            found_acceptable=true
+            ;;
+        esac
       fi
     fi
   done
 
-  if [ "$found_success" != true ]; then
-    echo "$request: no successful independent review metadata found" >&2
+  if [ "$found_acceptable" != true ]; then
+    echo "$request: no approved independent review metadata found" >&2
     failures=$((failures + 1))
   fi
 done < "$requests_file"

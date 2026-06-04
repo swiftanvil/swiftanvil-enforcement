@@ -123,6 +123,33 @@ The validator requires:
 - reviewer and builder to differ
 - output files referenced by metadata to exist
 
+## PR Provenance Enforcement
+
+Pull requests must include the workflow provenance table:
+
+```markdown
+| Phase | Reviewer | Model | Verdict | Rounds | Key Findings |
+|-------|----------|-------|---------|--------|--------------|
+| Plan | Independent reviewer | Model/version | APPROVED_WITH_NOTES | 1 | Planning risks reviewed. |
+| Impl | Independent reviewer | Model/version | APPROVED_WITH_NOTES | 1 | Implementation and tests reviewed. |
+```
+
+Validate a PR body locally:
+
+```sh
+scripts/validate-pr-provenance.sh --body-file pr-body.md
+```
+
+Caller repositories should run the policy workflow on pull request changes that can affect the body:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+```
+
+Use `pull_request`, not `pull_request_target`, for this policy workflow. The validator treats pull request body text as untrusted input and writes it through a quoted environment variable before parsing it. This gate proves that provenance was recorded; it does not prove the reviewer identity is authentic.
+
 ## Local Enforcement Without GitHub Minutes
 
 Run the same local checks directly:

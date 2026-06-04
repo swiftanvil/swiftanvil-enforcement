@@ -57,5 +57,16 @@ jobs:
           enforcement/scripts/validate-review-artifacts.sh \
             --root repo
 
+      - name: Validate PR review provenance
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          SWIFTANVIL_PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Keep untrusted PR text in an environment variable. Do not interpolate
+          # github.event.pull_request.body directly into this shell script.
+          printf '%s' "$SWIFTANVIL_PR_BODY" > pr-body.md
+          enforcement/scripts/validate-pr-provenance.sh \
+            --body-file pr-body.md
+
       - name: Run enforcement self-tests
         run: enforcement/scripts/test-enforcement.sh

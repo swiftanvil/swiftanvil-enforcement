@@ -47,12 +47,34 @@ yaml_escape() {
 
 extract_verdict() {
   file="$1"
-  if grep -Eq '\bNEEDS_REVISION\b' "$file"; then
-    printf '%s\n' "NEEDS_REVISION"
-  elif grep -Eq '\bAPPROVED_WITH_NOTES\b' "$file"; then
-    printf '%s\n' "APPROVED_WITH_NOTES"
-  elif grep -Eq '\bAPPROVED\b' "$file"; then
-    printf '%s\n' "APPROVED"
+  verdict=$(
+    awk '
+      {
+        line = $0
+        line = toupper(line)
+        gsub(/[`*]/, "", line)
+        gsub(/[[:space:]]+$/, "", line)
+        if (line ~ /^(Verdict:|Verdict -|Verdict)/) {
+          sub(/^Verdict[: -]*/, "", line)
+        }
+        if (line ~ /(^|[^A-Z_])APPROVED_WITH_NOTES([^A-Z_]|$)/) {
+          print "APPROVED_WITH_NOTES"
+          exit
+        }
+        if (line ~ /(^|[^A-Z_])NEEDS_REVISION([^A-Z_]|$)/) {
+          print "NEEDS_REVISION"
+          exit
+        }
+        if (line ~ /(^|[^A-Z_])APPROVED([^A-Z_]|$)/) {
+          print "APPROVED"
+          exit
+        }
+      }
+    ' "$file"
+  )
+
+  if [ -n "$verdict" ]; then
+    printf '%s\n' "$verdict"
   else
     printf '%s\n' "UNKNOWN"
   fi
