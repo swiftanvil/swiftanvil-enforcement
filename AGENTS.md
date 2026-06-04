@@ -19,4 +19,5 @@ This repository contains reusable enforcement tooling for SwiftAnvil.
 - Reviewer selection must be dynamic and must exclude the current builder agent.
 - Review runners must emit machine-readable metadata next to human-readable output.
 - CI must validate artifacts; local scripts may execute agents.
+- Pull request policy must validate the review provenance table required by `workflow.general`.
 - Policy changes must keep `scripts/test-enforcement.sh` passing.

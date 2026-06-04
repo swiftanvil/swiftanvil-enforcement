@@ -64,6 +64,11 @@ echo "APPROVED" > "$tmp_dir/repo/Reviews/2026-06-04-review.md"
 write_success_metadata "codex"
 assert_pass "$script_dir/validate-review-artifacts.sh" --root "$tmp_dir/repo"
 
+sed -i.bak 's/verdict: APPROVED/verdict: NEEDS_REVISION/' "$tmp_dir/repo/Reviews/2026-06-04-review.md.review.yml"
+rm "$tmp_dir/repo/Reviews/2026-06-04-review.md.review.yml.bak"
+assert_fail "$script_dir/validate-review-artifacts.sh" --root "$tmp_dir/repo"
+
+write_success_metadata "codex"
 write_success_metadata "claude"
 assert_fail "$script_dir/validate-review-artifacts.sh" --root "$tmp_dir/repo"
 
@@ -74,6 +79,43 @@ assert_fail "$script_dir/run-agent-review.sh" \
   --agent auto \
   --request "$tmp_dir/repo/Reviews/2026-06-04-review-request.md" \
   --output "$tmp_dir/repo/Reviews/2026-06-04-review.md"
+
+cat > "$tmp_dir/pr-good.md" <<'EOF'
+## Review Provenance
+
+| Phase | Reviewer | Model | Verdict | Rounds | Key Findings |
+|-------|----------|-------|---------|--------|--------------|
+| Plan | Claude CLI | Opus 4.7 | APPROVED_WITH_NOTES | 1 | Required PR enforcement and provenance validation. |
+| Impl | Claude CLI | Opus 4.7 | APPROVED_WITH_NOTES | 1 | Validator covers missing table, placeholder values, and self-review separation. |
+EOF
+
+assert_pass "$script_dir/validate-pr-provenance.sh" --body-file "$tmp_dir/pr-good.md"
+
+cat > "$tmp_dir/pr-missing-impl.md" <<'EOF'
+| Phase | Reviewer | Model | Verdict | Rounds | Key Findings |
+|-------|----------|-------|---------|--------|--------------|
+| Plan | Claude CLI | Opus 4.7 | APPROVED_WITH_NOTES | 1 | Looks reasonable. |
+EOF
+
+assert_fail "$script_dir/validate-pr-provenance.sh" --body-file "$tmp_dir/pr-missing-impl.md"
+
+cat > "$tmp_dir/pr-placeholder.md" <<'EOF'
+| Phase | Reviewer | Model | Verdict | Rounds | Key Findings |
+|-------|----------|-------|---------|--------|--------------|
+| Plan | TBD | TBD | APPROVED | 1 | TBD |
+| Impl | Claude CLI | Opus 4.7 | APPROVED | 1 | Checked. |
+EOF
+
+assert_fail "$script_dir/validate-pr-provenance.sh" --body-file "$tmp_dir/pr-placeholder.md"
+
+cat > "$tmp_dir/pr-invalid-verdict.md" <<'EOF'
+| Phase | Reviewer | Model | Verdict | Rounds | Key Findings |
+|-------|----------|-------|---------|--------|--------------|
+| Plan | Claude CLI | Opus 4.7 | UNAPPROVED | 1 | Checked. |
+| Impl | Claude CLI | Opus 4.7 | APPROVED | 1 | Checked. |
+EOF
+
+assert_fail "$script_dir/validate-pr-provenance.sh" --body-file "$tmp_dir/pr-invalid-verdict.md"
 
 write_success_metadata "codex"
 assert_pass "$repo_root/scripts/enforce-local.sh" --registry-root "$tmp_dir/meta" --root "$tmp_dir/repo"
