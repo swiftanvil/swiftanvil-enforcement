@@ -27,19 +27,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: repo
 
       - name: Checkout enforcement tooling
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: swiftanvil/swiftanvil-enforcement
           ref: ${{ inputs.enforcement_ref }}
           path: enforcement
 
       - name: Checkout document registry
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.registry_repository }}
           ref: ${{ inputs.registry_ref }}
