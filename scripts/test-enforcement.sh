@@ -117,6 +117,22 @@ EOF
 
 assert_fail "$script_dir/validate-pr-provenance.sh" --body-file "$tmp_dir/pr-invalid-verdict.md"
 
+cat > "$tmp_dir/review-verdict.md" <<'EOF'
+• APPROVED_WITH_NOTES
+
+Prior NEEDS_REVISION blockers are resolved.
+EOF
+
+verdict=$(
+  # shellcheck disable=SC1091
+  . "$script_dir/lib/agent-common.sh"
+  extract_verdict "$tmp_dir/review-verdict.md"
+)
+if [ "$verdict" != "APPROVED_WITH_NOTES" ]; then
+  echo "expected APPROVED_WITH_NOTES verdict extraction, got: $verdict" >&2
+  exit 1
+fi
+
 write_success_metadata "codex"
 assert_pass "$repo_root/scripts/enforce-local.sh" --registry-root "$tmp_dir/meta" --root "$tmp_dir/repo"
 
