@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/swift-ci.yml@v1
+    with:
+      # swiftanvil-version: '0.3.0'  # Pin for reproducibility
+      # xcode-version: '16.4'        # Uncomment if specific Xcode needed
+      # fail-on-warning: true        # Uncomment to block on warnings
+      # enable-registry-check: true  # Already default; disable for non-meta repos

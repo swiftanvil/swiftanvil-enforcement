@@ -1,0 +1,87 @@
+name: SwiftAnvil Lint
+
+on:
+  workflow_call:
+    inputs:
+      swiftanvil-version:
+        description: 'SwiftAnvil CLI version to install (e.g. 0.3.0)'
+        required: false
+        type: string
+        default: 'latest'
+      lint-package:
+        description: 'Run lint package'
+        required: false
+        type: boolean
+        default: true
+      lint-source:
+        description: 'Run lint source'
+        required: false
+        type: boolean
+        default: true
+      lint-tests:
+        description: 'Run lint tests'
+        required: false
+        type: boolean
+        default: true
+      lint-dependencies:
+        description: 'Run lint dependencies'
+        required: false
+        type: boolean
+        default: true
+      fail-on-warning:
+        description: 'Treat warnings as failures in source lint'
+        required: false
+        type: boolean
+        default: false
+      runs-on:
+        description: 'Runner OS'
+        required: false
+        type: string
+        default: 'macos-15'
+
+jobs:
+  lint:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftAnvil CLI
+        run: |
+          if [ "${{ inputs.swiftanvil-version }}" = "latest" ]; then
+            curl -sL https://api.github.com/repos/swiftanvil/swiftanvil-cli/releases/latest \
+              | grep "browser_download_url.*SwiftAnvilCLI" \
+              | cut -d '"' -f 4 \
+              | xargs curl -sL -o /usr/local/bin/swiftanvil
+          else
+            curl -sL \
+              "https://github.com/swiftanvil/swiftanvil-cli/releases/download/swiftanvil-cli-${{ inputs.swiftanvil-version }}/SwiftAnvilCLI" \
+              -o /usr/local/bin/swiftanvil
+          fi
+          chmod +x /usr/local/bin/swiftanvil
+          swiftanvil --version
+
+      - name: Lint Package.swift
+        if: ${{ inputs.lint-package }}
+        run: swiftanvil lint package
+
+      - name: Lint Source
+        if: ${{ inputs.lint-source }}
+        run: |
+          if [ "${{ inputs.fail-on-warning }}" = "true" ]; then
+            # Run and capture output; fail if any warnings or errors
+            swiftanvil lint source 2>&1 | tee lint-source.log
+            if grep -q "⚠️" lint-source.log || grep -q "❌" lint-source.log; then
+              echo "::error::Source lint found warnings or errors"
+              exit 1
+            fi
+          else
+            swiftanvil lint source
+          fi
+
+      - name: Lint Tests
+        if: ${{ inputs.lint-tests }}
+        run: swiftanvil lint tests
+
+      - name: Lint Dependencies
+        if: ${{ inputs.lint-dependencies }}
+        run: swiftanvil lint dependencies

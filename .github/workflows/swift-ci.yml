@@ -1,0 +1,96 @@
+name: SwiftAnvil CI
+
+on:
+  workflow_call:
+    inputs:
+      swiftanvil-version:
+        description: 'SwiftAnvil CLI version to install (e.g. 0.3.0)'
+        required: false
+        type: string
+        default: 'latest'
+      runs-on:
+        description: 'Runner OS'
+        required: false
+        type: string
+        default: 'macos-15'
+      xcode-version:
+        description: 'Xcode version to select (e.g. 16.4)'
+        required: false
+        type: string
+        default: ''
+      lint-package:
+        description: 'Run lint package'
+        required: false
+        type: boolean
+        default: true
+      lint-source:
+        description: 'Run lint source'
+        required: false
+        type: boolean
+        default: true
+      lint-tests:
+        description: 'Run lint tests'
+        required: false
+        type: boolean
+        default: true
+      lint-dependencies:
+        description: 'Run lint dependencies'
+        required: false
+        type: boolean
+        default: true
+      fail-on-warning:
+        description: 'Treat warnings as failures in source lint'
+        required: false
+        type: boolean
+        default: false
+      enable-registry-check:
+        description: 'Run document registry policy check'
+        required: false
+        type: boolean
+        default: true
+      registry-repository:
+        description: 'Registry repository for policy check'
+        required: false
+        type: string
+        default: 'swiftanvil/swiftanvil-meta'
+      registry-ref:
+        description: 'Registry ref for policy check'
+        required: false
+        type: string
+        default: 'main'
+
+jobs:
+  build-and-test:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        if: ${{ inputs.xcode-version != '' }}
+        run: sudo xcode-select -s /Applications/Xcode_${{ inputs.xcode-version }}.app
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+  lint:
+    needs: build-and-test
+    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/swift-lint.yml@v1
+    with:
+      swiftanvil-version: ${{ inputs.swiftanvil-version }}
+      lint-package: ${{ inputs.lint-package }}
+      lint-source: ${{ inputs.lint-source }}
+      lint-tests: ${{ inputs.lint-tests }}
+      lint-dependencies: ${{ inputs.lint-dependencies }}
+      fail-on-warning: ${{ inputs.fail-on-warning }}
+      runs-on: ${{ inputs.runs-on }}
+
+  registry-policy:
+    needs: build-and-test
+    if: ${{ inputs.enable-registry-check }}
+    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/document-registry-policy.yml@v1
+    with:
+      registry-repository: ${{ inputs.registry-repository }}
+      registry-ref: ${{ inputs.registry-ref }}

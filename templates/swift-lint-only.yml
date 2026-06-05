@@ -1,0 +1,18 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    uses: swiftanvil/swiftanvil-enforcement/.github/workflows/swift-lint.yml@v1
+    with:
+      # swiftanvil-version: '0.3.0'  # Pin for reproducibility
+      # fail-on-warning: true        # Uncomment to block on warnings
+      lint-package: true
+      lint-source: true
+      lint-tests: true
+      lint-dependencies: true
