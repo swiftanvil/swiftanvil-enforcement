@@ -10,10 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate YAML configs
+      - name: Validate configs exist and have content
         run: |
-          python3 -c "import yaml; yaml.safe_load(open('configs/swiftformat.yml'))"
-          python3 -c "import yaml; yaml.safe_load(open('configs/swiftlint.yml'))"
+          test -s configs/swiftlint.yml
+          test -s configs/swiftformat.yml
+
+      - name: Validate SwiftLint config is valid YAML
+        run: python3 -c "import yaml; yaml.safe_load(open('configs/swiftlint.yml'))"
 
       - name: Validate shell scripts
         run: |

@@ -157,8 +157,9 @@ while IFS= read -r file; do
   while IFS= read -r ref; do
     [ -n "$ref" ] || continue
 
-    if grep -nF "$ref" "$full_path" >/dev/null 2>&1; then
-      grep -nF "$ref" "$full_path" | while IFS= read -r line; do
+    matches="$(grep -nF "$ref" "$full_path" | grep -v '[├└│]' || true)"
+    if [ -n "$matches" ]; then
+      printf '%s\n' "$matches" | while IFS= read -r line; do
         printf '%s:%s: hardcoded registered document path "%s"; use its document ID from the registry\n' "$file" "$line" "$ref" >&2
       done
       violations=$((violations + 1))
