@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: true
+      lint-format:
+        description: 'Run SwiftFormat lint'
+        required: false
+        type: boolean
+        default: true
       fail-on-warning:
         description: 'Treat warnings as failures in source lint'
         required: false
@@ -70,6 +75,21 @@ jobs:
             chmod +x /usr/local/bin/swiftanvil
           fi
           swiftanvil --version
+
+      - name: Install SwiftFormat
+        if: ${{ inputs.lint-format }}
+        run: brew install swiftformat
+
+      - name: Lint Format (SwiftFormat)
+        if: ${{ inputs.lint-format }}
+        run: |
+          if [ -f "swiftanvil-enforcement/configs/swiftformat.yml" ]; then
+            swiftformat --lint . --config swiftanvil-enforcement/configs/swiftformat.yml
+          elif [ -f "../swiftanvil-enforcement/configs/swiftformat.yml" ]; then
+            swiftformat --lint . --config ../swiftanvil-enforcement/configs/swiftformat.yml
+          else
+            echo "::warning::SwiftFormat config not found; skipping format lint"
+          fi
 
       - name: Lint Package.swift
         if: ${{ inputs.lint-package }}

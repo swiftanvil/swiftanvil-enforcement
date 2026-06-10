@@ -24,9 +24,46 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel)
 workspace_root=$(CDPATH= cd -- "$repo_root/.." && pwd)
 
-exec "$workspace_root/swiftanvil-enforcement/scripts/enforce-local.sh" \
+# ── Document registry & review artifact checks ──
+"$workspace_root/swiftanvil-enforcement/scripts/enforce-local.sh" \
   --registry-root "$workspace_root/swiftanvil-meta" \
   --root "$repo_root"
+
+# ── SwiftFormat check (staged files only, for speed) ──
+staged_swift=$(git diff --cached --name-only --diff-filter=ACM | grep '\.swift$' || true)
+if [ -n "$staged_swift" ]; then
+  if command -v swiftformat >/dev/null 2>&1; then
+    config_path="$workspace_root/swiftanvil-enforcement/configs/swiftformat.yml"
+    if [ -f "$config_path" ]; then
+      echo "[pre-commit] Running SwiftFormat lint on staged files..."
+      if ! echo "$staged_swift" | xargs swiftformat --lint --config "$config_path"; then
+        echo "[pre-commit] ❌ SwiftFormat violations found. Run 'swiftformat .' to fix." >&2
+        exit 1
+      fi
+    else
+      echo "[pre-commit] ⚠️ SwiftFormat config not found at $config_path" >&2
+    fi
+  else
+    echo "[pre-commit] ⚠️ SwiftFormat not installed. Skipping format check." >&2
+    echo "             Install with: brew install swiftformat" >&2
+  fi
+
+  if command -v swiftlint >/dev/null 2>&1; then
+    config_path="$workspace_root/swiftanvil-enforcement/configs/swiftlint.yml"
+    if [ -f "$config_path" ]; then
+      echo "[pre-commit] Running SwiftLint on staged files..."
+      if ! echo "$staged_swift" | xargs swiftlint lint --config "$config_path"; then
+        echo "[pre-commit] ❌ SwiftLint violations found. Fix before committing." >&2
+        exit 1
+      fi
+    else
+      echo "[pre-commit] ⚠️ SwiftLint config not found at $config_path" >&2
+    fi
+  else
+    echo "[pre-commit] ⚠️ SwiftLint not installed. Skipping lint check." >&2
+    echo "             Install with: brew install swiftlint" >&2
+  fi
+fi
 EOF
 
   chmod +x "$hook_path"

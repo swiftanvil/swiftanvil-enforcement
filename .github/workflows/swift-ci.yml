@@ -38,6 +38,11 @@ on:
         required: false
         type: boolean
         default: true
+      lint-format:
+        description: 'Run SwiftFormat lint'
+        required: false
+        type: boolean
+        default: true
       fail-on-warning:
         description: 'Treat warnings as failures in source lint'
         required: false
@@ -84,6 +89,7 @@ jobs:
       lint-source: ${{ inputs.lint-source }}
       lint-tests: ${{ inputs.lint-tests }}
       lint-dependencies: ${{ inputs.lint-dependencies }}
+      lint-format: ${{ inputs.lint-format }}
       fail-on-warning: ${{ inputs.fail-on-warning }}
       runs-on: ${{ inputs.runs-on }}
 
