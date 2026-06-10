@@ -38,41 +38,46 @@ fi
 
 WORKTREE_PATH="$REPO_ROOT/.git/worktrees/merge-$BRANCH"
 
-echo "🔧 Setting up merge worktree..."
-
-# Ensure main is up to date in original repo
+# Ensure main is up to date
 git checkout main
 git pull origin main
 
-# Create worktree for main
-if [ -d "$WORKTREE_PATH" ]; then
-  git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
-  rm -rf "$WORKTREE_PATH"
+# If already on main, rebase in-place; otherwise use worktree
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$current_branch" = "main" ]; then
+  echo "🔄 Rebasing $BRANCH onto main (in-place)..."
+  git checkout "$BRANCH"
+  git rebase main
+
+  echo "⏩ Fast-forwarding main to $BRANCH..."
+  git checkout main
+  git merge --ff-only "$BRANCH"
+else
+  echo "🔧 Setting up merge worktree..."
+  if [ -d "$WORKTREE_PATH" ]; then
+    git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
+    rm -rf "$WORKTREE_PATH"
+  fi
+  git worktree add "$WORKTREE_PATH" main
+  cd "$WORKTREE_PATH"
+
+  echo "🔄 Rebasing $BRANCH onto main..."
+  git fetch origin
+  git checkout "$BRANCH"
+  git rebase main
+
+  echo "⏩ Fast-forwarding main to $BRANCH..."
+  git checkout main
+  git merge --ff-only "$BRANCH"
+
+  cd "$REPO_ROOT"
+  echo "🧹 Cleaning up worktree..."
+  git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || rm -rf "$WORKTREE_PATH"
 fi
-
-git worktree add "$WORKTREE_PATH" main
-cd "$WORKTREE_PATH"
-
-# Fetch and rebase feature branch onto latest main
-echo "🔄 Rebasing $BRANCH onto main..."
-git fetch origin
-git checkout "$BRANCH"
-git rebase main
-
-# Fast-forward merge main to feature tip
-echo "⏩ Fast-forwarding main to $BRANCH..."
-git checkout main
-git merge --ff-only "$BRANCH"
 
 # Push main
 echo "📤 Pushing main..."
 git push origin main
-
-# Return to original repo and clean up
-cd "$REPO_ROOT"
-
-echo "🧹 Cleaning up worktree..."
-git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || rm -rf "$WORKTREE_PATH"
 
 echo "🗑️ Deleting feature branch..."
 git branch -D "$BRANCH" 2>/dev/null || true
