@@ -1,0 +1,51 @@
+name: Block Direct Push
+
+on:
+  workflow_call:
+
+jobs:
+  block-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if push is from merged PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="${{ github.sha }}"
+          repo="${{ github.repository }}"
+
+          echo "Checking commit $sha for PR association..."
+
+          # Query GitHub API for PRs associated with this commit
+          prs=$(gh api "repos/$repo/commits/$sha/pulls" \
+            --jq '.[] | select(.state == "closed" and .merged == true) | .number' 2>/dev/null || true)
+
+          if [ -n "$prs" ]; then
+            echo "✅ Commit is from merged PR(s): $prs"
+            exit 0
+          fi
+
+          # Also check if this is a merge commit (has multiple parents)
+          # Merge commits from PRs are allowed
+          parents=$(gh api "repos/$repo/commits/$sha" \
+            --jq '.parents | length' 2>/dev/null || echo "0")
+          if [ "$parents" -gt 1 ]; then
+            echo "✅ Merge commit detected — allowing"
+            exit 0
+          fi
+
+          echo "❌ DIRECT PUSH TO MAIN DETECTED" >&2
+          echo "" >&2
+          echo "Pushing directly to main is prohibited." >&2
+          echo "All work must go through a feature branch and PR." >&2
+          echo "" >&2
+          echo "Workflow:" >&2
+          echo "  1. git checkout -b feature/<description>" >&2
+          echo "  2. git commit -m 'feat: ...'" >&2
+          echo "  3. git push origin feature/<description>" >&2
+          echo "  4. Open PR on GitHub" >&2
+          echo "  5. Merge via PR (rebase recommended)" >&2
+          echo "" >&2
+          echo "This commit will remain on main, but the build is marked FAILED." >&2
+          echo "To fix: revert this commit and re-apply via a feature branch." >&2
+          exit 1
