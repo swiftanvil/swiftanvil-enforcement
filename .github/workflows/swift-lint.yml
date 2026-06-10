@@ -33,6 +33,11 @@ on:
         required: false
         type: boolean
         default: true
+      health-scan:
+        description: 'Run swiftanvil health scan'
+        required: false
+        type: boolean
+        default: true
       fail-on-warning:
         description: 'Treat warnings as failures in source lint'
         required: false
@@ -116,3 +121,7 @@ jobs:
       - name: Lint Dependencies
         if: ${{ inputs.lint-dependencies }}
         run: swiftanvil lint dependencies
+
+      - name: Health Scan
+        if: ${{ inputs.health-scan }}
+        run: swiftanvil health scan --quick
