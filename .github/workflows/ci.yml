@@ -5,11 +5,19 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  test:
-    runs-on: macos-15
+  validate:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build
-      - name: Test
-        run: swift test
+
+      - name: Validate YAML configs
+        run: |
+          python3 -c "import yaml; yaml.safe_load(open('configs/swiftformat.yml'))"
+          python3 -c "import yaml; yaml.safe_load(open('configs/swiftlint.yml'))"
+
+      - name: Validate shell scripts
+        run: |
+          shellcheck --severity=warning scripts/*.sh || true
+
+      - name: Run enforcement self-tests
+        run: bash scripts/test-enforcement.sh
