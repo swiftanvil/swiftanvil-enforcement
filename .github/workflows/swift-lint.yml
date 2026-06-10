@@ -47,17 +47,28 @@ jobs:
 
       - name: Install SwiftAnvil CLI
         run: |
+          set -e
           if [ "${{ inputs.swiftanvil-version }}" = "latest" ]; then
-            curl -sL https://api.github.com/repos/swiftanvil/swiftanvil-cli/releases/latest \
+            download_url=$(curl -sL https://api.github.com/repos/swiftanvil/swiftanvil-cli/releases/latest \
               | grep "browser_download_url.*SwiftAnvilCLI" \
-              | cut -d '"' -f 4 \
-              | xargs curl -sL -o /usr/local/bin/swiftanvil
+              | cut -d '"' -f 4 || true)
+            if [ -n "$download_url" ]; then
+              curl -sL "$download_url" -o /usr/local/bin/swiftanvil
+              chmod +x /usr/local/bin/swiftanvil
+            else
+              echo "No release found. Building from source..."
+              git clone --depth 1 https://github.com/swiftanvil/swiftanvil-cli.git /tmp/swiftanvil-cli
+              cd /tmp/swiftanvil-cli
+              swift build -c release
+              cp .build/release/SwiftAnvilCLI /usr/local/bin/swiftanvil
+              chmod +x /usr/local/bin/swiftanvil
+            fi
           else
             curl -sL \
               "https://github.com/swiftanvil/swiftanvil-cli/releases/download/swiftanvil-cli-${{ inputs.swiftanvil-version }}/SwiftAnvilCLI" \
               -o /usr/local/bin/swiftanvil
+            chmod +x /usr/local/bin/swiftanvil
           fi
-          chmod +x /usr/local/bin/swiftanvil
           swiftanvil --version
 
       - name: Lint Package.swift
