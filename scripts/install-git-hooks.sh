@@ -23,6 +23,18 @@ set -eu
 
 repo_root=$(git rev-parse --show-toplevel)
 workspace_root=$(CDPATH= cd -- "$repo_root/.." && pwd)
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+# ── Block direct commits to main ──
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "[pre-commit] ❌ Direct commits to '$branch' are prohibited." >&2
+  echo "             Create a feature branch:" >&2
+  echo "               git checkout -b feature/<description>" >&2
+  echo "               git checkout -b fix/<description>" >&2
+  echo "               git checkout -b doc/<description>" >&2
+  echo "               git checkout -b chore/<description>" >&2
+  exit 1
+fi
 
 # ── Document registry & review artifact checks ──
 "$workspace_root/swiftanvil-enforcement/scripts/enforce-local.sh" \
