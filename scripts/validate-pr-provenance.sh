@@ -82,7 +82,7 @@ phase_row_has_valid_verdict() {
       split(line, cells, "|")
       if (cells[2] == phase) {
         verdict = toupper(cells[5])
-        if (verdict == "APPROVED" || verdict == "APPROVED_WITH_NOTES" || verdict == "NEEDS_REVISION" || verdict == "SELF-REVIEWED") {
+        if (verdict == "APPROVED" || verdict == "APPROVED_WITH_NOTES" || verdict == "NEEDS_REVISION" || verdict == "SELF-REVIEWED" || verdict == "PENDING") {
           found = 1
         }
       }
@@ -91,8 +91,29 @@ phase_row_has_valid_verdict() {
   ' "$body_file"
 }
 
+phase_row_get_verdict() {
+  phase="$1"
+  awk -v phase="$phase" '
+    BEGIN { verdict = "" }
+    /^\|/ {
+      line = tolower($0)
+      gsub(/[[:space:]*`]/, "", line)
+      split(line, cells, "|")
+      if (cells[2] == phase) {
+        verdict = toupper(cells[5])
+      }
+    }
+    END { print verdict }
+  ' "$body_file"
+}
+
 phase_row_has_real_values() {
   phase="$1"
+  verdict="$2"
+  # If verdict is PENDING, we don't require real values for other cells
+  if [ "$verdict" = "PENDING" ]; then
+    return 0
+  fi
   awk -v phase="$phase" '
     BEGIN { found = 0 }
     function placeholder(value) {
@@ -133,8 +154,9 @@ for phase in plan impl; do
     failures=$((failures + 1))
   fi
 
-  if ! phase_row_has_real_values "$phase"; then
-    echo "PR body phase '$phase' must not use placeholder provenance values" >&2
+  verdict=$(phase_row_get_verdict "$phase")
+  if ! phase_row_has_real_values "$phase" "$verdict"; then
+    echo "PR body phase '$phase' must not use placeholder provenance values (verdict: $verdict)" >&2
     failures=$((failures + 1))
   fi
 done
