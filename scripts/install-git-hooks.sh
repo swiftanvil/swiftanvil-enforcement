@@ -15,9 +15,9 @@ for git_dir in "$workspace_root"/*/.git "$workspace_root"/.github/.git; do
   [ -d "$git_dir" ] || continue
 
   repo_root=$(CDPATH='' cd -- "$git_dir/.." && pwd)
-  hook_path="$git_dir/hooks/pre-commit"
 
-  cat > "$hook_path" <<'EOF'
+  # ── pre-commit: block main, run format/lint ──
+  cat > "$git_dir/hooks/pre-commit" <<'EOF'
 #!/usr/bin/env sh
 set -eu
 
@@ -77,7 +77,61 @@ if [ -n "$staged_swift" ]; then
   fi
 fi
 EOF
+  chmod +x "$git_dir/hooks/pre-commit"
 
-  chmod +x "$hook_path"
-  echo "installed pre-commit hook: $repo_root"
+  # ── prepare-commit-msg: enforce conventional commits ──
+  cat > "$git_dir/hooks/prepare-commit-msg" <<'EOF'
+#!/usr/bin/env sh
+set -eu
+
+commit_msg_file="$1"
+source="$2"
+
+# Skip for merge commits, squash, amend
+if [ "$source" = "merge" ] || [ "$source" = "squash" ] || [ "$source" = "commit" ]; then
+  exit 0
+fi
+
+msg=$(head -n 1 "$commit_msg_file" || true)
+
+# Allow empty messages (git will complain later)
+[ -z "$msg" ] && exit 0
+
+# Allow revert commits
+expr "$msg" : "^Revert " >/dev/null && exit 0
+
+# Check conventional commit format
+valid_types="feat|fix|docs|style|refactor|test|chore|ci|build|perf"
+if ! expr "$msg" : "^\($valid_types\):" >/dev/null; then
+  echo "[prepare-commit-msg] ❌ Commit message does not follow conventional commit format." >&2
+  echo "                     Expected: <type>: <description>" >&2
+  echo "                     Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf" >&2
+  echo "                     Example: 'feat: add health monitor'" >&2
+  exit 1
+fi
+EOF
+  chmod +x "$git_dir/hooks/prepare-commit-msg"
+
+  # ── post-checkout: validate branch naming ──
+  cat > "$git_dir/hooks/post-checkout" <<'EOF'
+#!/usr/bin/env sh
+set -eu
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Skip for detached HEAD or main
+[ "$branch" = "HEAD" ] && exit 0
+[ "$branch" = "main" ] && exit 0
+[ "$branch" = "master" ] && exit 0
+
+# Warn if branch name doesn't follow convention
+if ! expr "$branch" : "^\(feature\|fix\|doc\|chore\)/" >/dev/null; then
+  echo "[post-checkout] ⚠️ Branch name '$branch' does not follow convention." >&2
+  echo "                Expected: feature/, fix/, doc/, or chore/ prefix" >&2
+  echo "                Example: git checkout -b feature/my-change" >&2
+fi
+EOF
+  chmod +x "$git_dir/hooks/post-checkout"
+
+  echo "installed hooks: $repo_root"
 done
